@@ -22,6 +22,15 @@ type (
 		Target SqlTarget
 		Name   SqlIdent
 	}
+	OnConflict struct {
+		Cause SqlExpr
+		Set   []SqlExpr
+	}
+	InsertStmt struct {
+		Table      TableDesc
+		Insert     map[string]SqlExpr
+		OnConflict *OnConflict
+	}
 	UpdateStmt struct {
 		Table TableDesc
 		Set   []SqlExpr
@@ -146,6 +155,57 @@ func (c *UpdateStmt) dependedOn() Dependencies {
 }
 
 func (c *UpdateStmt) solved() (result Dependencies) {
+	return nil
+}
+
+func (c *OnConflict) String() string {
+	if c == nil {
+		return ""
+	}
+	var (
+		valuesList = make([]string, 0)
+	)
+	for _, s := range c.Set {
+		valuesList = append(valuesList, fmt.Sprintf("%s", s))
+	}
+	return fmt.Sprintf(
+		"on conflict %s do update set %s",
+		c.Cause,
+		strings.Join(valuesList, ", "),
+	)
+}
+
+func (c *InsertStmt) String() string {
+	var (
+		fieldsList = make([]string, 0)
+		valuesList = make([]string, 0)
+	)
+	for f, s := range c.Insert {
+		fieldsList = append(fieldsList, fmt.Sprintf("%s", f))
+		valuesList = append(valuesList, fmt.Sprintf("%s", s))
+	}
+	return fmt.Sprintf(
+		"insert into %s (%s) values (%s) %s",
+		c.Table.Table.GetName(),
+		strings.Join(fieldsList, ", "),
+		strings.Join(valuesList, ", "),
+		c.OnConflict,
+	)
+}
+
+func (c *InsertStmt) statement() int { return 0 }
+
+func (c *InsertStmt) dependedOn() Dependencies {
+	return []NamedObject{
+		{
+			Schema: "", // TODO ?
+			Object: c.Table.Table.GetName(),
+			Field:  "",
+		},
+	}
+}
+
+func (c *InsertStmt) solved() (result Dependencies) {
 	return nil
 }
 
