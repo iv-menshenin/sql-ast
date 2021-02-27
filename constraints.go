@@ -53,7 +53,6 @@ type (
 	// unique
 	ConstraintUniqueExpr struct {
 		ConstraintCommon
-		Where SqlExpr
 	}
 	// foreign key
 	ConstraintForeignKeyExpr struct {
@@ -197,9 +196,6 @@ func (c *ConstraintUniqueExpr) ConstraintString() string {
 }
 
 func (c *ConstraintUniqueExpr) ConstraintParams() string {
-	if c.Where != nil {
-		return "where " + c.Where.String()
-	}
 	return ""
 }
 
