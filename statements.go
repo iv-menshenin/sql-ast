@@ -41,6 +41,11 @@ type (
 		From    TableDesc
 		Where   SqlExpr
 	}
+	WithStmt struct {
+		Name   string
+		With   SelectStmt
+		Select SelectStmt
+	}
 )
 
 func (c *AlterStmt) String() string {
@@ -231,4 +236,18 @@ func (c *SelectStmt) dependedOn() Dependencies {
 
 func (c *SelectStmt) solved() (result Dependencies) {
 	return nil
+}
+
+func (c *WithStmt) String() string {
+	return fmt.Sprintf("with %s as (%s) %s", c.Name, c.With, c.Select)
+}
+
+func (c *WithStmt) statement() int { return 0 }
+
+func (c *WithStmt) dependedOn() Dependencies {
+	return append(c.Select.dependedOn(), c.With.dependedOn()...)
+}
+
+func (c *WithStmt) solved() (result Dependencies) {
+	return append(c.Select.solved(), c.With.solved()...)
 }
